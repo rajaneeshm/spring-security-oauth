@@ -19,9 +19,28 @@ public class TokenRevocationLiveTest {
         final String accessToken = obtainAccessToken("fooClientIdPassword", "john", "123");
         assertNotNull(accessToken);
     }
+    
+    @Test
+    public void getAccessToken_with_refreshToken() {
+        final Response accessTokenresponse = obtainAccessTokenResponse("fooClientIdPassword", "john", "123");
+        String refreshToken = accessTokenresponse.jsonPath().getString("refresh_token");
+        String accessToken =  accessTokenresponse.jsonPath().getString("access_token");
+       // final Response response =  RestAssured.given().auth().preemptive().oauth2(accessToken).when().post("http://localhost:8081/spring-security-oauth-server/oauth/token/revokeById/"+accessToken);
+        assertNotNull(accessToken);
+        assertNotNull(refreshToken);
+        String accessToken_with_refreshToken = obtainRefreshToken("fooClientIdPassword",refreshToken);
+        assertNotNull(accessToken_with_refreshToken);
+    }
 
-    //
-
+    private Response obtainAccessTokenResponse(String clientId, String username, String password){
+    	final Map<String, String> params = new HashMap<String, String>();
+        params.put("grant_type", "password");
+        params.put("client_id", clientId);
+        params.put("username", username);
+        params.put("password", password);
+        final Response response = RestAssured.given().auth().preemptive().basic(clientId, "secret").and().with().params(params).when().post("http://localhost:8081/spring-security-oauth-server/oauth/token");
+    	return response;
+    }
     private String obtainAccessToken(String clientId, String username, String password) {
         final Map<String, String> params = new HashMap<String, String>();
         params.put("grant_type", "password");
@@ -33,7 +52,7 @@ public class TokenRevocationLiveTest {
         return response.jsonPath().getString("access_token");
     }
 
-    private String obtainRefreshToken(String clientId) {
+    private String obtainRefreshToken(String clientId, String refreshToken) {
         final Map<String, String> params = new HashMap<String, String>();
         params.put("grant_type", "refresh_token");
         params.put("client_id", clientId);
